@@ -29,3 +29,6 @@ Wearever é um app Android que busca o clima atual e redireciona o usuário para
 2. Abra no Android Studio
 3. Sincronize o Gradle
 4. Rode em um dispositivo ou emulador com Android 7.1.1+
+
+## Desenvolvido por
+- <a href="https://github.com/Sunref">Fernanda M.</a> e <a href="https://github.com/Kdz-22">Kevin Z.</a>
