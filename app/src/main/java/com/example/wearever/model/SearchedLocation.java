@@ -1,7 +1,5 @@
 package com.example.wearever.model;
 
-package com.example.wearever.model;
-
 /**
  * Model que representa a busca realizada.
  */

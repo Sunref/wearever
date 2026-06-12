@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ScrollView: Permite que o conteúdo da tela role caso seja maior que o tamanho do visor -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0D1117"
+    android:fillViewport="true">
+
+    <!-- Container principal que organiza os elementos um abaixo do outro (vertical) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="32dp">
+
+        <!-- Cabeçalho com botão de voltar e título da tela -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Botão de voltar (ícone de seta rotacionado 180 graus) -->
+            <ImageView
+                android:id="@+id/ivVoltar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="6dp"
+                android:src="@drawable/ic_chevron_right"
+                android:rotation="180"
+                app:tint="#6C8EBF" />
+
+            <!-- Título da tela -->
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:text="Buscar por temperatura"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
+
+        </LinearLayout>
+
+        <!-- Texto explicativo sobre o que fazer nesta tela -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:fontFamily="sans-serif"
+            android:text="Digite a temperatura desejada e encontraremos a cidade mais próxima de você com esse clima."
+            android:textColor="#4A5A6E"
+            android:lineSpacingMultiplier="1.4"
+            android:textSize="14sp" />
+
+        <!-- Card que contém o campo de entrada de temperatura -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            app:cardBackgroundColor="#131C27"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="6dp">
+
+                <!-- Ícone de termômetro -->
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_thermostat"
+                    app:tint="#6C8EBF" />
+
+                <!-- Campo para o usuário digitar o número (aceita números negativos) -->
+                <EditText
+                    android:id="@+id/etTemperatura"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:fontFamily="sans-serif"
+                    android:hint="Ex: -5"
+                    android:inputType="numberSigned"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#2E3D50"
+                    android:textSize="16sp" />
+
+                <!-- Símbolo de Graus Celsius -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="°C"
+                    android:textColor="#6C8EBF"
+                    android:textSize="18sp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Botão principal para realizar a busca -->
+        <Button
+            android:id="@+id/btnBuscar"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_button_blue"
+            android:fontFamily="sans-serif-medium"
+            android:text="Buscar cidade"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <!-- Card de resultado (inicialmente escondido com visibility="gone") -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardResultado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#131C27"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <!-- Rótulo superior do resultado -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.08"
+                    android:text="CIDADE ENCONTRADA"
+                    android:textAllCaps="true"
+                    android:textColor="#4A5A6E"
+                    android:textSize="11sp" />
+
+                <!-- Nome da cidade encontrada (exemplo fixo) -->
+                <TextView
+                    android:id="@+id/tvCidadeResultado"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Campos do Jordão, SP"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp" />
+
+                <!-- Linha divisória horizontal -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="20dp"
+                    android:background="#1E2733" />
+
+                <!-- Container horizontal para os detalhes da cidade encontrada -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- Coluna de Distância -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Distância"
+                            android:textColor="#4A5A6E"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/tvDistancia"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="182 km"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp" />
+
+                    </LinearLayout>
+
+                    <!-- Coluna de Temperatura -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Temperatura"
+                            android:textColor="#4A5A6E"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/tvTemperaturaResultado"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="-5°C"
+                            android:textColor="#6C8EBF"
+                            android:textSize="16sp" />
+
+                    </LinearLayout>
+
+                    <!-- Coluna de Condição Climática -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Condição"
+                            android:textColor="#4A5A6E"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/tvCondicaoResultado"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Neve"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+</ScrollView>
