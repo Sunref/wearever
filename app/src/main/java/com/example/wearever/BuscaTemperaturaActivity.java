@@ -1,68 +1,160 @@
 package com.example.wearever;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.app.ActivityCompat;
 
-// Classe que gerencia a tela de busca de cidades por temperatura
+import com.example.wearever.model.WeatherForecast;
+import com.example.wearever.repository.WeatherRepository;
+import com.example.wearever.util.LocationHelper;
+
+import java.util.Locale;
+
 public class BuscaTemperaturaActivity extends AppCompatActivity {
 
-    // Declaração dos componentes da interface (Views)
+    private static final int REQUEST_LOCATION = 2;
+
     private EditText etTemperatura;
     private CardView cardResultado;
     private TextView tvCidadeResultado, tvDistancia, tvTemperaturaResultado, tvCondicaoResultado;
+    private ProgressBar progressBar;
+
+    private WeatherRepository repository;
+    private LocationHelper locationHelper;
+    private android.location.Location userLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Inicializa a Activity
         super.onCreate(savedInstanceState);
-        // Define o layout XML que será usado (activity_busca_temperatura.xml)
         setContentView(R.layout.activity_busca_temperatura);
 
-        // Vincula as variáveis aos componentes reais definidos no XML através do ID
-        etTemperatura        = findViewById(R.id.etTemperatura);
-        cardResultado        = findViewById(R.id.cardResultado);
-        tvCidadeResultado    = findViewById(R.id.tvCidadeResultado);
-        tvDistancia          = findViewById(R.id.tvDistancia);
+        repository = new WeatherRepository(this);
+        locationHelper = new LocationHelper(this);
+
+        etTemperatura          = findViewById(R.id.etTemperatura);
+        cardResultado          = findViewById(R.id.cardResultado);
+        tvCidadeResultado      = findViewById(R.id.tvCidadeResultado);
+        tvDistancia            = findViewById(R.id.tvDistancia);
         tvTemperaturaResultado = findViewById(R.id.tvTemperaturaResultado);
-        tvCondicaoResultado  = findViewById(R.id.tvCondicaoResultado);
+        tvCondicaoResultado    = findViewById(R.id.tvCondicaoResultado);
+        progressBar            = findViewById(R.id.progressBar);
 
-        // Configura o botão de voltar para encerrar a atividade atual e retornar à anterior
         findViewById(R.id.ivVoltar).setOnClickListener(v -> finish());
+        ((Button) findViewById(R.id.btnBuscar)).setOnClickListener(v -> realizarBusca());
 
-        // Configura o clique do botão "Buscar" para disparar o método realizarBusca()
-        Button btnBuscar = findViewById(R.id.btnBuscar);
-        btnBuscar.setOnClickListener(v -> realizarBusca());
+        prefetchLocation();
     }
 
-    // Método que executa a lógica de busca quando o botão é clicado
-    private void realizarBusca() {
-        // Obtém o texto digitado, remove espaços em branco extras
-        String input = etTemperatura.getText().toString().trim();
+    private void prefetchLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
+            return;
+        }
+        locationHelper.getLocation(new LocationHelper.OnLocationResult() {
+            @Override public void onLocation(android.location.Location location) { userLocation = location; }
+            @Override public void onError(String message) {}
+        });
+    }
 
-        // Validação básica: verifica se o campo está vazio
+    private void realizarBusca() {
+        String input = etTemperatura.getText().toString().trim();
         if (input.isEmpty()) {
             Toast.makeText(this, "Digite uma temperatura", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Converte o texto para um número inteiro
-        int temperatura = Integer.parseInt(input);
+        double temp;
+        try {
+            temp = Double.parseDouble(input);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Temperatura inválida", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // Lógica de Mock (Simulação): Define valores fixos para demonstrar o funcionamento da interface
-        // Na Entrega 3, isso será substituído pela consulta real ao banco de dados ou API
-        tvCidadeResultado.setText("Campos do Jordão, SP");
-        tvDistancia.setText("182 km");
-        tvTemperaturaResultado.setText(temperatura + "°C");
-        tvCondicaoResultado.setText("Neve");
+        progressBar.setVisibility(View.VISIBLE);
+        cardResultado.setVisibility(View.GONE);
 
-        // Torna o card de resultado visível para o usuário após a "busca"
+        if (userLocation != null) {
+            buscar(temp, userLocation);
+        } else {
+            locationHelper.getLocation(new LocationHelper.OnLocationResult() {
+                @Override
+                public void onLocation(android.location.Location location) {
+                    userLocation = location;
+                    buscar(temp, location);
+                }
+                @Override
+                public void onError(String message) {
+                    runOnUiThread(() -> {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(BuscaTemperaturaActivity.this,
+                                "Não foi possível obter localização.", Toast.LENGTH_LONG).show();
+                    });
+                }
+            });
+        }
+    }
+
+    private void buscar(double temp, android.location.Location location) {
+        repository.searchByTemperature(temp, location.getLatitude(), location.getLongitude(),
+                new WeatherRepository.Callback<WeatherForecast>() {
+                    @Override
+                    public void onSuccess(WeatherForecast f) {
+                        runOnUiThread(() -> {
+                            progressBar.setVisibility(View.GONE);
+                            showResult(f);
+                        });
+                    }
+                    @Override
+                    public void onError(String message) {
+                        runOnUiThread(() -> {
+                            progressBar.setVisibility(View.GONE);
+                            Toast.makeText(BuscaTemperaturaActivity.this,
+                                    message, Toast.LENGTH_LONG).show();
+                        });
+                    }
+                });
+    }
+
+    private void showResult(WeatherForecast f) {
+        float[] d = new float[1];
+        android.location.Location.distanceBetween(
+                userLocation.getLatitude(), userLocation.getLongitude(),
+                f.getLatitude(), f.getLongitude(), d);
+
+        tvCidadeResultado.setText(f.getCityName() + ", " + f.getCountry());
+        tvDistancia.setText(String.format(Locale.getDefault(), "%.0f km", d[0] / 1000.0));
+        tvTemperaturaResultado.setText(String.format(Locale.getDefault(), "%.0f°C", f.getTemp()));
+        tvCondicaoResultado.setText(capitalize(f.getWeatherDescription()));
         cardResultado.setVisibility(View.VISIBLE);
+    }
+
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return "";
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_LOCATION
+                && grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            prefetchLocation();
+        }
     }
 }
