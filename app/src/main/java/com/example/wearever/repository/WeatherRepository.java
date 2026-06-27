@@ -45,7 +45,14 @@ public class WeatherRepository {
                 callback.onSuccess(forecast);
             } catch (Exception e) {
                 Log.e(TAG, "Erro ao buscar clima atual: " + e.getMessage());
-                callback.onError(e.getMessage());
+                // Fallback: tenta cache expirado antes de desistir
+                List<WeatherForecast> staleCache = db.getForecastsByCity(
+                        lat + "," + lon, Long.MAX_VALUE);
+                if (!staleCache.isEmpty()) {
+                    callback.onSuccess(staleCache.get(0));
+                } else {
+                    callback.onError(e.getMessage());
+                }
             }
         }).start();
     }
@@ -58,7 +65,14 @@ public class WeatherRepository {
                 callback.onSuccess(forecasts);
             } catch (Exception e) {
                 Log.e(TAG, "Erro ao buscar previsão: " + e.getMessage());
-                callback.onError(e.getMessage());
+                // fallback: tenta cache expirado antes de desistir
+                List<WeatherForecast> staleCache = db.getForecastsByCity(
+                        lat + "," + lon, Long.MAX_VALUE);
+                if (!staleCache.isEmpty()) {
+                    callback.onSuccess(staleCache);
+                } else {
+                    callback.onError(e.getMessage());
+                }
             }
         }).start();
     }
