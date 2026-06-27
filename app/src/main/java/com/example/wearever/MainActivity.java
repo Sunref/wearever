@@ -17,8 +17,10 @@ import com.example.wearever.adapter.PrevisaoAdapter;
 import com.example.wearever.model.WeatherForecast;
 import com.example.wearever.repository.WeatherRepository;
 import com.example.wearever.util.LocationHelper;
+import com.example.wearever.db.WeatherDbHelper;
 
 import java.text.SimpleDateFormat;
+import java.util.concurrent.TimeUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -42,13 +44,15 @@ public class MainActivity extends AppCompatActivity {
         repository = new WeatherRepository(this);
         locationHelper = new LocationHelper(this);
 
+        new Thread(() -> WeatherDbHelper.getInstance(this).deleteExpiredForecasts(
+                TimeUnit.DAYS.toMillis(7))).start(); // remove cache com mais de 7 dias
+
         bindViews();
 
         findViewById(R.id.cardBuscaTemperatura).setOnClickListener(v ->
                 startActivity(new Intent(this, BuscaTemperaturaActivity.class)));
 
         findViewById(R.id.ivAtualizar).setOnClickListener(v -> requestLocationAndLoad());
-
         requestLocationAndLoad();
     }
 
@@ -76,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadWeather() {
-        locationHelper.getLocation(new LocationHelper.OnLocationResult() {
+        locationHelper.getFreshLocation(new LocationHelper.OnLocationResult() {
             @Override
             public void onLocation(android.location.Location location) {
                 double lat = location.getLatitude();
@@ -131,6 +135,12 @@ public class MainActivity extends AppCompatActivity {
         tvSensacaoTermica.setText(String.format(Locale.getDefault(), "%.0f°", f.getFeelsLike()));
         tvUltimaAtualizacao.setText("Atualizado às " +
                 new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()));
+
+        long ageSeconds = (System.currentTimeMillis() / 1000L) - f.getCachedAt();
+        if (ageSeconds > 60) { // mais de 1 minuto = veio do cache, não da API
+            tvUltimaAtualizacao.setText("Dados salvos (offline) — " +
+                    new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(f.getCachedAt() * 1000)));
+        }
     }
 
     private void updateForecastUI(List<WeatherForecast> forecasts) {

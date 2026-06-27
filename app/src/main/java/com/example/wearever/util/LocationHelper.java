@@ -25,6 +25,10 @@ public class LocationHelper {
         this.locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
     }
 
+    /**
+     * Pega localização rapidamente, usando cache se disponível.
+     * Ideal para o carregamento inicial do app.
+     */
     public void getLocation(OnLocationResult callback) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -39,7 +43,29 @@ public class LocationHelper {
             return;
         }
 
-        // Solicita atualização única
+        requestFreshLocation(callback);
+    }
+
+    /**
+     * Ignora o cache e força uma nova leitura de localização.
+     * Use quando o usuário clicar em "atualizar" manualmente.
+     */
+    public void getFreshLocation(OnLocationResult callback) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            callback.onError("Permissão de localização não concedida.");
+            return;
+        }
+
+        requestFreshLocation(callback);
+    }
+
+    private void requestFreshLocation(OnLocationResult callback) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            callback.onError("Permissão de localização não concedida.");
+            return;
+        }
         String provider = getBestProvider();
         if (provider == null) {
             callback.onError("Nenhum provedor de localização disponível.");
