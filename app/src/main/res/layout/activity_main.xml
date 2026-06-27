@@ -1,19 +1,374 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- ScrollView: Permite que toda a tela role verticalmente se o conteúdo for maior que a tela do celular -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="#0D1117"
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Container principal: Organiza os blocos da tela um abaixo do outro (vertical) -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="32dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- CABEÇALHO: Exibe a localização atual e botão de atualizar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Ícone de localização (alfinete) -->
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_location_on"
+                app:tint="#6C8EBF" />
+
+            <!-- Nome da cidade e estado -->
+            <TextView
+                android:id="@+id/tvCidade"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:text="São Paulo, SP"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <!-- Botão de atualizar (ícone de refresh) com efeito de clique redondo -->
+            <ImageView
+                android:id="@+id/ivAtualizar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="6dp"
+                android:src="@drawable/ic_refresh"
+                app:tint="#6C8EBF" />
+
+        </LinearLayout>
+
+        <!-- TEMPERATURA PRINCIPAL: Destaque para o clima atual -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Coluna de texto (Temperatura, Descrição e Mín/Máx) -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- Valor da temperatura atual em tamanho grande -->
+                <TextView
+                    android:id="@+id/tvTemperaturaAtual"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-light"
+                    android:text="23°"
+                    android:textColor="#FFFFFF"
+                    android:textSize="96sp" />
+
+                <!-- Descrição textual do clima (ex: Nublado) -->
+                <TextView
+                    android:id="@+id/tvDescricaoClima"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="sans-serif"
+                    android:text="Parcialmente nublado"
+                    android:textColor="#8B9BB4"
+                    android:textSize="16sp" />
+
+                <!-- Bloco de temperatura máxima e mínima do dia -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Temperatura máxima -->
+                    <TextView
+                        android:id="@+id/tvTempMax"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="28°"
+                        android:textColor="#6C8EBF"
+                        android:textSize="14sp" />
+
+                    <!-- Divisor visual "/" -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="4dp"
+                        android:text="/"
+                        android:textColor="#3D4F66"
+                        android:textSize="14sp" />
+
+                    <!-- Temperatura mínima -->
+                    <TextView
+                        android:id="@+id/tvTempMin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif"
+                        android:text="17°"
+                        android:textColor="#8B9BB4"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Ícone ilustrativo do clima (lado direito) -->
+            <ImageView
+                android:id="@+id/ivIconeClima"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/ic_partly_cloudy"
+                app:tint="#6C8EBF" />
+
+        </LinearLayout>
+
+        <!-- Divisor horizontal estético -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="32dp"
+            android:background="#1E2733" />
+
+        <!-- DETALHES ADICIONAIS: Umidade, Vento e Sensação Térmica -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal">
+
+            <!-- Bloco de Umidade -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_humidity"
+                    app:tint="#6C8EBF" />
+
+                <TextView
+                    android:id="@+id/tvUmidade"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="68%"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Umidade"
+                    android:textColor="#4A5A6E"
+                    android:textSize="11sp" />
+
+            </LinearLayout>
+
+            <!-- Bloco de Vento -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_wind"
+                    app:tint="#6C8EBF" />
+
+                <TextView
+                    android:id="@+id/tvVento"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="12 km/h"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Vento"
+                    android:textColor="#4A5A6E"
+                    android:textSize="11sp" />
+
+            </LinearLayout>
+
+            <!-- Bloco de Sensação Térmica -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_thermostat"
+                    app:tint="#6C8EBF" />
+
+                <TextView
+                    android:id="@+id/tvSensacaoTermica"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="21°"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Sensação"
+                    android:textColor="#4A5A6E"
+                    android:textSize="11sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Outro divisor estético -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:background="#1E2733" />
+
+        <!-- PRÓXIMOS DIAS: Título da seção de previsão -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.08"
+            android:text="PRÓXIMOS DIAS"
+            android:textAllCaps="true"
+            android:textColor="#4A5A6E"
+            android:textSize="11sp" />
+
+        <!-- RecyclerView: Lista horizontal que exibirá a previsão dos próximos dias -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPrevisao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <!-- BOTÃO BUSCA POR TEMPERATURA: Card clicável para navegar para a tela de busca -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardBuscaTemperatura"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardBackgroundColor="#131C27"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="20dp">
+
+                <!-- Ícone decorativo dentro de um círculo azul (definido no drawable) -->
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_circle_blue"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_travel_explore"
+                    app:tint="#FFFFFF" />
+
+                <!-- Textos explicativos do botão -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Buscar por temperatura"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="Encontre a cidade mais próxima"
+                        android:textColor="#4A5A6E"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <!-- Ícone de seta para a direita indicando que é clicável -->
+                <ImageView
+                    android:width="20dp"
+                    android:height="20dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_chevron_right"
+                    app:tint="#3D4F66" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- RODAPÉ: Informação de quando os dados foram atualizados pela última vez -->
+        <TextView
+            android:id="@+id/tvUltimaAtualizacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:text="Atualizado às 14:35"
+            android:textColor="#2E3D50"
+            android:textSize="11sp" />
+
+    </LinearLayout>
+
+</ScrollView>
