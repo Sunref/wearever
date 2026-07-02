@@ -10,8 +10,16 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class OpenWeatherService {
+
+    /** Quantidade de threads usadas para buscar as 40 cidades em paralelo. */
+    private static final int CITY_SEARCH_THREADS = 10;
 
     private static final String BASE_URL = "https://api.openweathermap.org/data/2.5/";
     private static final String API_KEY = "5c82605a03467ad753cc5c30b1adea8f";
@@ -92,48 +100,73 @@ public class OpenWeatherService {
         return parseForecast(json);
     }
 
+    /**
+     * Busca o clima das 40 cidades em paralelo (antes era sequencial: 40 chamadas
+     * HTTP bloqueantes uma atrás da outra, podendo levar dezenas de segundos).
+     * Usa um pool fixo de threads, igual ao padrão já usado no restante do app.
+     */
     public List<WeatherForecast> fetchCitiesByTemperature(double targetTemp) throws Exception {
-        List<WeatherForecast> matched = new ArrayList<>();
         double tolerance = 5.0;
+        ExecutorService pool = Executors.newFixedThreadPool(CITY_SEARCH_THREADS);
+        List<Future<WeatherForecast>> futures = new ArrayList<>(WORLD_CITIES.length);
 
-        for (double[] city : WORLD_CITIES) {
-            try {
-                String endpoint = BASE_URL + "weather?lat=" + city[0] + "&lon=" + city[1]
-                        + "&appid=" + API_KEY + "&units=" + UNITS + "&lang=" + LANG;
-                JSONObject json = request(endpoint);
-                double temp = json.getJSONObject("main").getDouble("temp");
-
-                if (Math.abs(temp - targetTemp) <= tolerance) {
-                    matched.add(parseWeather(json));
-                }
-            } catch (Exception e) {
-                // Segue para a próxima cidade se uma falhar
+        try {
+            for (double[] city : WORLD_CITIES) {
+                double lat = city[0];
+                double lon = city[1];
+                futures.add(pool.submit((Callable<WeatherForecast>) () -> {
+                    String endpoint = BASE_URL + "weather?lat=" + lat + "&lon=" + lon
+                            + "&appid=" + API_KEY + "&units=" + UNITS + "&lang=" + LANG;
+                    JSONObject json = request(endpoint);
+                    double temp = json.getJSONObject("main").getDouble("temp");
+                    if (Math.abs(temp - targetTemp) <= tolerance) {
+                        return parseWeather(json);
+                    }
+                    return null;
+                }));
             }
-        }
 
-        return matched;
+            List<WeatherForecast> matched = new ArrayList<>();
+            for (Future<WeatherForecast> future : futures) {
+                try {
+                    WeatherForecast f = future.get(15, TimeUnit.SECONDS);
+                    if (f != null) matched.add(f);
+                } catch (Exception e) {
+                    // Cidade individual falhou ou estourou o tempo: segue para as próximas
+                }
+            }
+            return matched;
+        } finally {
+            pool.shutdown();
+        }
     }
 
     private JSONObject request(String endpoint) throws Exception {
         URL url = new URL(endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setConnectTimeout(10000);
-        conn.setReadTimeout(10000);
+        try {
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
 
-        int code = conn.getResponseCode();
-        if (code != HttpURLConnection.HTTP_OK) {
-            throw new Exception("HTTP " + code);
+            int code = conn.getResponseCode();
+            if (code != HttpURLConnection.HTTP_OK) {
+                throw new Exception("HTTP " + code);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) sb.append(line);
+            }
+
+            return new JSONObject(sb.toString());
+        } finally {
+            // Antes: se a resposta desse erro (HTTP != 200) ou a leitura falhasse,
+            // a conexão nunca era fechada. Com 40 chamadas por busca, isso podia
+            // esgotar as conexões disponíveis rapidamente.
+            conn.disconnect();
         }
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) sb.append(line);
-        reader.close();
-        conn.disconnect();
-
-        return new JSONObject(sb.toString());
     }
 
     private WeatherForecast parseWeather(JSONObject json) throws Exception {

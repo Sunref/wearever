@@ -13,11 +13,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.view.View;
+import android.widget.ProgressBar;
+
 import com.example.wearever.adapter.PrevisaoAdapter;
 import com.example.wearever.model.WeatherForecast;
 import com.example.wearever.repository.WeatherRepository;
 import com.example.wearever.util.LocationHelper;
-import com.example.wearever.db.WeatherDbHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvCidade, tvTemperaturaAtual, tvDescricaoClima;
     private TextView tvTempMax, tvTempMin, tvUmidade, tvVento, tvSensacaoTermica, tvUltimaAtualizacao;
     private RecyclerView rvPrevisao;
+    private ProgressBar progressBar;
+    private View ivAtualizar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,15 +48,14 @@ public class MainActivity extends AppCompatActivity {
         repository = new WeatherRepository(this);
         locationHelper = new LocationHelper(this);
 
-        new Thread(() -> WeatherDbHelper.getInstance(this).deleteExpiredForecasts(
-                TimeUnit.DAYS.toMillis(7))).start(); // remove cache com mais de 7 dias
+        repository.pruneOldCache(TimeUnit.DAYS.toMillis(7)); // remove cache com mais de 7 dias
 
         bindViews();
 
         findViewById(R.id.cardBuscaTemperatura).setOnClickListener(v ->
                 startActivity(new Intent(this, BuscaTemperaturaActivity.class)));
 
-        findViewById(R.id.ivAtualizar).setOnClickListener(v -> requestLocationAndLoad());
+        ivAtualizar.setOnClickListener(v -> requestLocationAndLoad());
         requestLocationAndLoad();
     }
 
@@ -67,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
         tvSensacaoTermica   = findViewById(R.id.tvSensacaoTermica);
         tvUltimaAtualizacao = findViewById(R.id.tvUltimaAtualizacao);
         rvPrevisao          = findViewById(R.id.rvPrevisao);
+        progressBar         = findViewById(R.id.progressBar);
+        ivAtualizar         = findViewById(R.id.ivAtualizar);
     }
 
     private void requestLocationAndLoad() {
@@ -80,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadWeather() {
+        showLoading(true);
         locationHelper.getFreshLocation(new LocationHelper.OnLocationResult() {
             @Override
             public void onLocation(android.location.Location location) {
@@ -91,23 +97,35 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onError(String message) {
-                runOnUiThread(() ->
-                        Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                });
             }
         });
+    }
+
+    private void showLoading(boolean loading) {
+        progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
+        ivAtualizar.setVisibility(loading ? View.GONE : View.VISIBLE);
     }
 
     private void loadCurrentWeather(double lat, double lon) {
         repository.getCurrentWeather(lat, lon, new WeatherRepository.Callback<WeatherForecast>() {
             @Override
             public void onSuccess(WeatherForecast f) {
-                runOnUiThread(() -> updateCurrentWeatherUI(f));
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    updateCurrentWeatherUI(f);
+                });
             }
 
             @Override
             public void onError(String message) {
-                runOnUiThread(() ->
-                        Toast.makeText(MainActivity.this, "Erro: " + message, Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    Toast.makeText(MainActivity.this, "Erro: " + message, Toast.LENGTH_LONG).show();
+                });
             }
         });
     }

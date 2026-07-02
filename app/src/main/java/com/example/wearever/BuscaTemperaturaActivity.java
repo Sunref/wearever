@@ -17,6 +17,7 @@ import androidx.core.app.ActivityCompat;
 
 import com.example.wearever.model.WeatherForecast;
 import com.example.wearever.repository.WeatherRepository;
+import com.example.wearever.util.DistanceUtils;
 import com.example.wearever.util.LocationHelper;
 
 import java.util.Locale;
@@ -130,13 +131,12 @@ public class BuscaTemperaturaActivity extends AppCompatActivity {
     }
 
     private void showResult(WeatherForecast f) {
-        float[] d = new float[1];
-        android.location.Location.distanceBetween(
+        double distKm = DistanceUtils.distanceKm(
                 userLocation.getLatitude(), userLocation.getLongitude(),
-                f.getLatitude(), f.getLongitude(), d);
+                f.getLatitude(), f.getLongitude());
 
         tvCidadeResultado.setText(f.getCityName() + ", " + f.getCountry());
-        tvDistancia.setText(String.format(Locale.getDefault(), "%.0f km", d[0] / 1000.0));
+        tvDistancia.setText(String.format(Locale.getDefault(), "%.0f km", distKm));
         tvTemperaturaResultado.setText(String.format(Locale.getDefault(), "%.0f°C", f.getTemp()));
         tvCondicaoResultado.setText(capitalize(f.getWeatherDescription()));
         cardResultado.setVisibility(View.VISIBLE);
