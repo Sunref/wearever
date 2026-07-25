@@ -14,6 +14,7 @@ import com.example.wearever.R;
 import com.example.wearever.model.WeatherForecast;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Adaptador para o RecyclerView de Previsão do Tempo.
@@ -59,8 +60,8 @@ public class PrevisaoAdapter extends RecyclerView.Adapter<PrevisaoAdapter.Previs
         holder.tvDiaSemana.setText(item.getCityName());
 
         // Formata as temperaturas máxima e mínima com o símbolo de graus (ex: 28°)
-        holder.tvTempMaxDia.setText(String.format("%.0f°", item.getTempMax()));
-        holder.tvTempMinDia.setText(String.format("%.0f°", item.getTempMin()));
+        holder.tvTempMaxDia.setText(String.format(Locale.getDefault(), "%.0f°", item.getTempMax()));
+        holder.tvTempMinDia.setText(String.format(Locale.getDefault(), "%.0f°", item.getTempMin()));
 
         // Define o ícone de acordo com a condição climática (chuva, nublado, etc)
         holder.ivIconeClimaDia.setImageResource(resolverIcone(item.getWeatherCondition()));

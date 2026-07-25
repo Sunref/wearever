@@ -1,19 +1,29 @@
 package com.example.wearever.repository;
 
 import android.content.Context;
-import android.location.Location;
 import android.util.Log;
 
 import com.example.wearever.api.OpenWeatherService;
 import com.example.wearever.db.WeatherDbHelper;
 import com.example.wearever.model.SearchedLocation;
 import com.example.wearever.model.WeatherForecast;
+import com.example.wearever.util.DistanceUtils;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class WeatherRepository {
 
     private static final String TAG = "WeatherRepository";
+
+    /**
+     * Pool compartilhado por todas as instâncias do repositório. Antes cada chamada
+     * (getCurrentWeather, getForecast, searchByTemperature...) criava uma Thread nova
+     * do zero; com várias chamadas seguidas (ex: usuário batendo no refresh), isso
+     * gerava threads demais sem necessidade. Reaproveitar um pool fixo é mais leve.
+     */
+    private static final ExecutorService executor = Executors.newFixedThreadPool(4);
 
     private final WeatherDbHelper db;
     private final OpenWeatherService service;
@@ -28,8 +38,15 @@ public class WeatherRepository {
         void onError(String message);
     }
 
+    /**
+     * Remove do cache as previsões mais antigas que maxAgeMs. Roda em background.
+     */
+    public void pruneOldCache(long maxAgeMs) {
+        executor.execute(() -> db.deleteExpiredForecasts(maxAgeMs));
+    }
+
     public void getCurrentWeather(double lat, double lon, Callback<WeatherForecast> callback) {
-        new Thread(() -> {
+        executor.execute(() -> {
             try {
                 List<WeatherForecast> cached = db.getForecastsByCity(
                         lat + "," + lon, WeatherDbHelper.CACHE_TTL_MS);
@@ -54,11 +71,11 @@ public class WeatherRepository {
                     callback.onError(e.getMessage());
                 }
             }
-        }).start();
+        });
     }
 
     public void getForecast(double lat, double lon, Callback<List<WeatherForecast>> callback) {
-        new Thread(() -> {
+        executor.execute(() -> {
             try {
                 List<WeatherForecast> forecasts = service.fetchForecast(lat, lon);
                 db.insertForecasts(forecasts);
@@ -74,12 +91,12 @@ public class WeatherRepository {
                     callback.onError(e.getMessage());
                 }
             }
-        }).start();
+        });
     }
 
     public void searchByTemperature(double targetTemp, double userLat, double userLon,
                                     Callback<WeatherForecast> callback) {
-        new Thread(() -> {
+        executor.execute(() -> {
             try {
                 List<WeatherForecast> results = service.fetchCitiesByTemperature(targetTemp);
 
@@ -95,15 +112,14 @@ public class WeatherRepository {
                 if (!userCache.isEmpty()) userCityId = userCache.get(0).getCityId();
 
                 WeatherForecast best = null;
-                float bestDist = Float.MAX_VALUE;
-                float[] dist = new float[1];
+                double bestDistKm = Double.MAX_VALUE;
 
                 for (WeatherForecast f : results) {
                     if (f.getCityId().equals(userCityId)) continue;
-                    Location.distanceBetween(f.getLatitude(), f.getLongitude(),
-                            userLat, userLon, dist);
-                    if (dist[0] < bestDist) {
-                        bestDist = dist[0];
+                    double distKm = DistanceUtils.distanceKm(
+                            f.getLatitude(), f.getLongitude(), userLat, userLon);
+                    if (distKm < bestDistKm) {
+                        bestDistKm = distKm;
                         best = f;
                     }
                 }
@@ -117,14 +133,13 @@ public class WeatherRepository {
                 Log.e(TAG, "Erro na busca por temperatura: " + e.getMessage());
                 callback.onError(e.getMessage());
             }
-        }).start();
+        });
     }
 
     private void saveSearchHistory(String condition, WeatherForecast result,
                                    double userLat, double userLon) {
-        float[] d = new float[1];
-        Location.distanceBetween(userLat, userLon,
-                result.getLatitude(), result.getLongitude(), d);
+        double distKm = DistanceUtils.distanceKm(userLat, userLon,
+                result.getLatitude(), result.getLongitude());
         SearchedLocation sl = new SearchedLocation(
                 condition,
                 result.getCityId(),
@@ -132,7 +147,7 @@ public class WeatherRepository {
                 result.getCountry(),
                 result.getLatitude(),
                 result.getLongitude(),
-                d[0] / 1000.0,
+                distKm,
                 userLat,
                 userLon
         );
